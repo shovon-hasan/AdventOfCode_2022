@@ -1,0 +1,96 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            var treeMap = [];
+
+            for (let i = 0; i < input_lines.length; i++) {
+                let trees = input_lines[i].split('');
+                treeMap.push(trees);
+            }
+
+            let colLength = treeMap.length;
+            let rowLength = treeMap[0].length;
+
+            let maxScenicScore = 0;
+            for (let i = 0; i < colLength; i++) {
+                for (let j = 0; j < colLength; j++) {
+                    let scenicScore = _calcScenicScore(treeMap, i, j);
+                    if (scenicScore > maxScenicScore) {
+                        //console.log(`visible [${i}][${j}]`);
+                        maxScenicScore = scenicScore;
+                    }
+                }
+            }
+
+            console.log(`Max scenic score: ${maxScenicScore}`);
+
+        }
+
+        function _calcScenicScore(treeMap, col, row) {
+            let colLength = treeMap.length;
+            let rowLength = treeMap[0].length;
+
+            let treeHeight = treeMap[col][row];
+
+            // check if on edge
+            if (row == 0 || col == 0 || row == rowLength || col == colLength) {
+                return 0;
+            }
+
+            // check left visibility
+            let distanceLeft = 0;
+            for (let j = row-1; j >= 0; j--) {
+                distanceLeft++;
+                if (treeMap[col][j] >= treeHeight) {
+                    break;
+                }
+            }
+
+            // check right visibility
+            let distanceRight = 0;
+            for (let j = row+1; j < rowLength; j++) {
+                distanceRight++;
+                if (treeMap[col][j] >= treeHeight) {
+                    break;
+                }
+            }
+
+            // check top visibility
+            let distanceTop = 0;
+            for (let i = col-1; i >= 0; i--) {
+                distanceTop++;
+                if (treeMap[i][row] >= treeHeight) {
+                    break;
+                }
+            }
+
+            // check bottom visibility
+            let distanceBottom = 0;
+            for (let i = col+1; i < colLength; i++) {
+                distanceBottom++;
+                if (treeMap[i][row] >= treeHeight) {
+                    break;
+                }
+            }
+
+            return distanceLeft * distanceRight * distanceTop * distanceBottom;
+        }
+
+    </script>
+</html>

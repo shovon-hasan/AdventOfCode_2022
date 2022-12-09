@@ -1,0 +1,33 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+
+            let startPacket = 0;
+            for (let i = 0; i < input_str.length-14; i++) {
+                var marker = input_str.substring(i,i+14).split('');
+                var noDups = new Set(marker);
+
+                if (marker.length === noDups.size) {
+                    startPacket = i+14;
+                    break;
+                }
+            }
+
+            console.log(startPacket);
+        }
+    </script>
+</html>

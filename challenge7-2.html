@@ -1,0 +1,171 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            let dirContentMap = {
+                '/': {
+                    'type': 'directory',
+                    'children': {},
+                    'size': -1
+                }
+            };
+            let currentDirName = '';
+            let currentDirPath = [];
+            let isScanningDir = false;
+
+            let answer = {
+                'dirs': [],
+                'size': 0
+            };
+
+            for (let i = 0; i < input_lines.length; i++) {
+                let inputLine = input_lines[i];
+
+                if (inputLine.startsWith('$ cd')) {
+                    isScanningDir = false;
+
+                    changeDirName = inputLine.split(' ').slice(-1);
+
+                    if (changeDirName == '/') {
+                        currentDirPath = ['/'];
+                    } else if (changeDirName == '..') {
+                        currentDirPath.pop();
+                    } else if (changeDirName.length >= 1) {
+                        currentDirPath.push(changeDirName);
+                    }
+                    currentDirName = currentDirPath[currentDirPath.length-1];
+                    //console.log(`currentDirPath: ${currentDirPath}`);
+                    //console.log(`currentDirName: ${currentDirName}`);
+                    continue;
+                }
+
+                if (inputLine.startsWith('$ ls')) {
+                    isScanningDir = true;
+                    continue;
+                }
+
+                if (isScanningDir) {
+                    let parentDir = dirContentMap['/'];
+                    for (let i=1; i < currentDirPath.length; i++) {
+                        parentDir = parentDir.children[currentDirPath[i]];
+                    }
+
+                    if (inputLine.startsWith('dir')) {
+                        // directory name
+                        let dirName = inputLine.split(' ').slice(-1);
+
+                        parentDir.children[dirName] = {
+                            'type': 'directory',
+                            'children': {},
+                            'size': -1
+                        };
+                    } else {
+                        // file name
+                        let fileSize = parseInt(inputLine.split(' ')[0]);
+                        let fileName = inputLine.split(' ')[1];
+                        parentDir.children[fileName] = {
+                            'type': 'file',
+                            'size': fileSize
+                        };
+                    }
+                }
+                
+            }
+            
+            _calcDirSize(dirContentMap, ['/']);
+
+            let occupiedSpace = dirContentMap['/'].size;
+            let unusedSpace = 70000000 - occupiedSpace;
+
+            console.log(dirContentMap);
+            console.log(`unusedSpace: ${unusedSpace}`);
+
+            if (unusedSpace < 30000000) {
+                let deleteSize = 30000000 - unusedSpace;
+
+                let dirSizeList = [];
+                _getAllDirSize(dirContentMap, ['/'], dirSizeList);
+
+                console.log(`Dir size list: ${dirSizeList}`);
+
+                let deleteDirSize = 0;
+
+                // sort ascending
+                let sortedDirSizeList = dirSizeList.sort(function(a, b){return a-b});
+                for (let i = 0; i < sortedDirSizeList.length; i++) {
+                    if (sortedDirSizeList[i] < deleteSize) {
+                        continue;
+                    }
+                    if (sortedDirSizeList[i] > deleteSize) {
+                        deleteDirSize = sortedDirSizeList[i];
+                        break;
+                    }
+                }
+
+                console.log(`Delete directory size: ${deleteDirSize}`);
+
+            }
+        }
+
+        function _calcDirSize(dirContentMap, dirPath) {
+            let parentDir = dirContentMap['/'];
+            for (let i=1; i < dirPath.length; i++) {
+                parentDir = parentDir.children[dirPath[i]];
+            }
+
+            let children = parentDir.children;
+
+            let dirMemSize = 0;
+            Object.keys(children).forEach(function(cName) {
+                if (children[cName].type == 'directory') {
+                    let childDirPath = [...dirPath];
+                    childDirPath.push(cName);
+                    dirMemSize += _calcDirSize(dirContentMap, childDirPath);
+                } else {
+                    dirMemSize += children[cName].size;
+                }
+            });
+
+            parentDir.size = dirMemSize;
+
+            return dirMemSize;
+        }
+
+        function _getAllDirSize(dirContentMap, dirPath, dirSizeList) {
+
+            let parentDir = dirContentMap['/'];
+            for (let i=1; i < dirPath.length; i++) {
+                parentDir = parentDir.children[dirPath[i]];
+            }
+
+            dirSizeList.push(parentDir.size);
+
+            let children = parentDir.children;
+
+            Object.keys(children).forEach(function(cName) {
+                if (children[cName].type == 'directory') {
+                    let childDirPath = [...dirPath];
+                    childDirPath.push(cName);
+                    _getAllDirSize(dirContentMap, childDirPath, dirSizeList) 
+                }
+            });
+        }
+
+
+    </script>
+</html>

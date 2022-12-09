@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge1()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        function solveChallenge1() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // total calories carried by a single elf
+            var totalCalories = 0;
+
+            // total calories carried by all elves
+            var caloriesList = [];
+
+            // maximum amount of calories carried by an elf
+            var maxCalories = 0;
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                if (input_lines[i]) {
+                    var calory = parseInt(input_lines[i]);
+                    totalCalories += calory;
+
+                    if (totalCalories > maxCalories) {
+                        maxCalories = totalCalories;
+                    }
+                }
+
+                // if we find a blank line then stop counting calories carried by an elf
+                if (!input_lines[i+1]) {
+                    caloriesList.push(totalCalories);
+                    totalCalories = 0;
+                }
+            }
+
+            // output the answer for part 1 on console
+            console.log(`Max calories: ${maxCalories}`);
+
+            // ---------------------------------
+            // below is the solution for part 2
+            // ---------------------------------
+
+            // sort total calories in descending orders
+            caloriesList.sort(function(a, b){return b - a});
+
+            // get sum of top 3 total calories
+            const topThreeSum = caloriesList.slice(0, 3).reduce((partialSum, a) => partialSum + a, 0);
+
+            // output the answer for part 2 on console
+            console.log(`Top three total: ${topThreeSum}`);
+        }
+    </script>
+</html>

@@ -1,0 +1,57 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            var prioritiesSum = 0;
+
+            for (let i = 0; i < input_lines.length; i+=3) {
+                let items1 = input_lines[i];
+                let items2 = input_lines[i+1];
+                let items3 = input_lines[i+2];
+                let allItems = items1 + items2 + items3;
+
+                //console.log(`All items in group ${i}: ${allItems}`);
+
+                let commonItem = '';
+                for (const char of items1) {
+                    if (items2.includes(char) && items3.includes(char)) {
+                        commonItem = char;
+                        //console.log(`Common item in group ${i}: ${char}`);
+                        break;
+                    }
+                }
+
+                prioritiesSum += _getItemPriority(commonItem);
+            }
+
+            console.log(`Sum of priorities: ${prioritiesSum}`);
+        }
+
+        function _getItemPriority(char) {
+            let ASCIICode = char.charCodeAt(0);
+            if (ASCIICode >= 97) {
+                // lowercase characters a(97) - z(122)
+                return ASCIICode - 96;
+            }
+            if (ASCIICode < 97) {
+                // uppercase characters A(65) - Z(90)
+                return ASCIICode - 65 + 27;
+            }
+        }
+    </script>
+</html>

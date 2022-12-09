@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            var fullContainmentCount = 0;
+            for (let i = 0; i < input_lines.length; i++) {
+                var sectionAssignments = input_lines[i].split(',');
+                var assignment1 = sectionAssignments[0].split('-').map(Number);
+                var assignment2 = sectionAssignments[1].split('-').map(Number);
+
+                if (
+                    (assignment1[0] >= assignment2[0] && assignment1[1] <= assignment2[1]) ||
+                    (assignment2[0] >= assignment1[0] && assignment2[1] <= assignment1[1])
+                ) {
+                    //console.log(`Full containment found at line ${i+1}: ${assignment1[0]}-${assignment1[1]},${assignment2[0]}-${assignment2[1]}`);
+                    fullContainmentCount++;
+                }
+            }
+
+            console.log(`Fully contained pairs: ${fullContainmentCount}`);
+        }
+
+
+    </script>
+</html>

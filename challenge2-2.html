@@ -1,0 +1,85 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            let totalScore = 0;
+
+            for (let i = 0; i < input_lines.length; i++) {
+                var opponentPlay = input_lines[i].charAt(0);
+                var roundResult = input_lines[i].charAt(2);
+
+                var opponentPoint = _ShapePoint(opponentPlay);
+                var roundPoint = _getRoundPoint(roundResult);
+                var myPoint = _getMyShapePoint(opponentPoint, roundPoint);
+
+                totalScore += (myPoint + roundPoint);
+            }
+
+            console.log(`Total score: ${totalScore}`);
+        }
+
+        function _ShapePoint(play) {
+            if (play === 'A') {
+                return 1;
+            }
+            if (play === 'B') {
+                return 2;
+            }
+            if (play === 'C') {
+                return 3;
+            }
+            return 0;
+        }
+
+        function _getRoundPoint(roundResult) {
+            if (roundResult === 'X') {
+                return 0;
+            }
+            if (roundResult === 'Y') {
+                return 3;
+            }
+            if (roundResult === 'Z') {
+                return 6;
+            }
+            return 0;
+        }
+
+        function _getMyShapePoint(opponentPoint, roundPoint) {
+            if (roundPoint === 3) {
+                // Draw
+                return opponentPoint;
+            }
+            if (roundPoint === 6) {
+                // Winning
+                let myPoint = opponentPoint + 1;
+                if (myPoint > 3) {
+                    myPoint = 1;
+                }
+                return myPoint;
+            }
+            if (roundPoint === 0) {
+                // Losing
+                let myPoint = opponentPoint - 1;
+                if (myPoint < 1) {
+                    myPoint = 3;
+                }
+                return myPoint;
+            }
+        }
+    </script>
+</html>

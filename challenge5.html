@@ -1,0 +1,84 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            let stackInputIndex = 0;
+            for (let i = 1; i < input_lines.length; i++) {
+                if (!input_lines[i]) {
+                    stackInputIndex = i-1;
+                }
+            }
+
+            var stackInputLine = input_lines[stackInputIndex];
+            var stackCount = stackInputLine.split(' ').map(Number).filter(i => i!==0).length;
+
+            console.log(`Stack count: ${stackCount}`);
+
+            // sreate empty stacks (2d array)
+            let stacks = {};
+            for (let i = 1; i <= stackCount; i++) {
+                stacks[i] = [];
+            }
+
+            var crateInputIndex = 1;
+            var crateIndexesInInputLine = [crateInputIndex];
+            for (let i = 2; i <= stackCount; i++) {
+                crateInputIndex += 4;
+                crateIndexesInInputLine.push(crateInputIndex);
+            }
+
+            // put crates in stacks from bottom
+            for (let l = stackInputIndex-1; l >= 0; l--) {
+                var crateInputLine = input_lines[l];
+                
+                for (let i = 0; i < crateIndexesInInputLine.length; i++) {
+                    var crate = crateInputLine.charAt(crateIndexesInInputLine[i]);
+
+                    if (crate.match(/[A-Z]/i)) {
+                        stacks[i+1].push(crate);
+                    }
+                }
+            }
+
+            // move crates
+            for (let l = stackInputIndex+2; l < input_lines.length; l++) {
+                let words = input_lines[l].split(' ');
+
+                let moveItemCount = parseInt(words[1]);
+                let fromStack = parseInt(words[3]);
+                let toStack = parseInt(words[5]);
+
+                //console.log(`Command: move ${moveItemCount} from ${fromStack} to ${toStack}`);
+
+                for (let i = 0; i < moveItemCount; i++) {
+                    stacks[toStack].push(stacks[fromStack].pop());
+                }
+            }
+
+            var topCrates = '';
+            for (let i = 1; i <= stackCount; i++) {
+                topCrates += stacks[i][stacks[i].length-1];
+            }
+
+            //console.log(stacks);
+            console.log(topCrates);
+
+
+        }
+    </script>
+</html>
