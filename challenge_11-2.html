@@ -79,6 +79,13 @@
                 }
             }
 
+            // this part is tricky to understand
+            // as we have an operation old*old, the worry value can go way over the max interger range
+            // we need to change the value in such a way that the output of the test does not change
+            // now the test is dividing worry value by some number
+            // so, if we get the least common Multiply(LCM) value of all the test parameter, 
+            // and keep the mremainder after diving with LCM, the output of test will not change
+         
             let lcmNum = 1;
             for (let i = 0; i < monkeys.length; i++) {
                 lcmNum = math.lcm(lcmNum, monkeys[i].testParam);
