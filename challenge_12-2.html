@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+        <div id="disp_output" ></div>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        class GridPoint {
+            constructor(row, col, height) {
+                this.row = row;
+                this.col = col;
+                this.height = height;
+                this.distance = Number.POSITIVE_INFINITY;
+                this.visited = false;
+            }
+        }
+
+        const directions = [[-1,0],[0,1],[1,0],[0,-1]];
+
+        let gridMap = [];
+        let gridLength;
+        let gridWidth;
+
+        let toBevisited = [];
+
+        let SPs = [];
+        let E;
+
+        function initializeData(){
+            toBevisited = [];
+
+            for(let i = 0; i < gridMap.length; i++) {
+                for(let j = 0; j < gridMap[i].length; j++) {
+                    gridMap[i][j].distance = Number.POSITIVE_INFINITY;
+                    gridMap[i][j].visited = false;
+                }
+            }
+
+        }
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let gridLine = [];
+                for (let j = 0; j < input_lines[i].length; j++) {
+                    let height = 0;
+                    if (input_lines[i][j] == 'S' || input_lines[i][j] == 'a') {
+                        height = "a".charCodeAt(0)-"a".charCodeAt(0);
+                        SPs.push([i, j]);
+                    } else if (input_lines[i][j] == 'E') {
+                        height = "z".charCodeAt(0)-"a".charCodeAt(0);
+                        E = [i, j];
+                    } else {
+                        height = input_lines[i].charCodeAt(j)-"a".charCodeAt(0);
+                    }
+                    gridLine.push(new GridPoint(i, j, height));
+                }
+                gridMap.push(gridLine);
+            }
+
+            gridLength = gridMap[0].length
+            gridWidth = gridMap.length;
+
+            let distanceFromStarts = [];
+
+            SPs.forEach(SP => {
+
+                initializeData();
+
+                let startPoint = gridMap[SP[0]][SP[1]];
+                startPoint.distance = 0;
+                toBevisited.push(startPoint);
+
+                while (toBevisited.length > 0) {
+                    let nextPoint = toBevisited.shift();
+                    if (nextPoint.row == E[0] && nextPoint.col == E[1]) {
+                        distanceFromStarts.push(nextPoint.distance);
+                        break;
+                    } else {
+                        _visit(nextPoint);
+                    }
+                }
+            });
+
+            distanceFromStarts.sort((a,b) => {return a-b;});
+            console.log(`distance to start point: ${distanceFromStarts[0]}`);
+        }
+
+        function _visit(gridPoint) {
+
+            if (gridPoint.visited) {
+                return;
+            }
+
+            let nextVisitingPoints = [];
+
+            directions.forEach(dir => {
+                if (__canMove(gridPoint, dir)) {
+                    let nextRow = gridPoint.row + dir[0];
+                    let nextCol = gridPoint.col + dir[1];
+
+                    let nextPoint = gridMap[nextRow][nextCol];
+                    if (nextPoint.distance > gridPoint.distance + 1) {
+                        nextPoint.distance = gridPoint.distance + 1;
+                        nextVisitingPoints.push(nextPoint);
+                    }
+                }
+            });
+
+            gridPoint.visited = true;
+
+            if (nextVisitingPoints.length > 0) {
+                nextVisitingPoints.sort(function(a,b) {return a.distance - b.distance;});
+                nextVisitingPoints.forEach(p => toBevisited.push(p));
+            }
+        }
+
+        function __canMove(gridPoint, direction) {
+
+            let nextRow = gridPoint.row + direction[0];
+            if (nextRow < 0 || nextRow > gridWidth-1) {
+                return false;
+            }
+            let nextCol = gridPoint.col + direction[1];
+            if (nextCol < 0 || nextCol > gridLength-1) {
+                return false;
+            }
+
+            let nextPoint = gridMap[nextRow][nextCol];
+            if (nextPoint.height - gridPoint.height > 1 || nextPoint.visited) {
+                return false;
+            }
+
+            return true;
+        }
+
+    </script>
+</html>
