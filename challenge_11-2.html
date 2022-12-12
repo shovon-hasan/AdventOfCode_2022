@@ -1,0 +1,139 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        class Monkey {
+            constructor(id, items, operation, testParam, truePass, falsePass) {
+                this.id = id;
+                this.items = items;
+                this.operation = operation;
+                this.testParam = testParam;
+                this.truePass = truePass;
+                this.falsePass = falsePass;
+                this.inspected = 0;
+            }
+        }
+
+        const monkeys = [];
+
+        function solveChallenge() {
+
+            const ROUND = 20;
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                if (input_lines[i].startsWith('Monkey')) {
+                    let monkeyId = parseInt(input_lines[i].slice(0, -1).split(' ')[1]);
+                    let attr = {
+                        'id': monkeyId,
+                        'items': null,
+                        'operation': null,
+                        'testParam': null,
+                        'truePass': null,
+                        'falsePass': null
+                    };
+
+                    for (let l = 1; l <= 5; l++) {
+                        let attrLine = input_lines[i+l];
+                        if (l == 1) {
+                            attr.items = attrLine.split(':')[1].split(',').map(Number);
+                        }
+                        if (l == 2) {
+                            attr.operation = attrLine.split('=')[1].trim();
+                        }
+                        if (l == 3) {
+                            attr.testParam = parseInt(attrLine.split('by')[1]);
+                        }
+                        if (l == 4) {
+                            attr.truePass = parseInt(attrLine.split('monkey')[1]);
+                        }
+                        if (l == 5) {
+                            attr.falsePass = parseInt(attrLine.split('monkey')[1]);
+                        }
+                    }
+                    let monkey = new Monkey(attr.id, attr.items, attr.operation, attr.testParam, attr.truePass, attr.falsePass);
+                    monkeys.push(monkey);
+
+                    i = i+5;
+                } else {
+                    continue;
+                }
+            }
+
+            let lcmNum = 1;
+            for (let i = 0; i < monkeys.length; i++) {
+                lcmNum = math.lcm(lcmNum, monkeys[i].testParam);
+            }
+            console.log(`lcmNum: ${lcmNum}`);
+
+            for (let r = 1; r <= ROUND; r++) {
+                for (let i = 0; i < monkeys.length; i++) {
+                    let monkey = monkeys[i];
+    
+                    monkey.items.forEach(worryLevel => {
+                        let newWorryLevel = _performOperation(worryLevel, monkey.operation) % lcmNum;
+                        //let newWorryLevel = _performOperation(worryLevel, monkey.operation);
+                        if (newWorryLevel > Number.MAX_SAFE_INTEGER) {
+                            console.log(`Overflow detected: ${newWorryLevel} <- ${Number.MAX_SAFE_INTEGER}}`);
+                        }
+
+                        let passingMonkeyId = newWorryLevel % monkey.testParam == 0 ? monkey.truePass : monkey.falsePass;
+                        
+                        monkeys[passingMonkeyId].items.push(newWorryLevel);
+                    });
+                    monkey.inspected += monkey.items.length;
+                    monkey.items = [];
+                }
+            }
+
+            console.log(monkeys);
+
+            let inspectionNums = [];
+            for (let i = 0; i < monkeys.length; i++) {
+                inspectionNums.push(monkeys[i].inspected);
+            }
+            // sort by descending order
+            inspectionNums = inspectionNums.sort(function(a, b){return b-a});
+            console.log(`inspectionNums: ${inspectionNums}`);
+
+            let monkeyBusiness = inspectionNums[0] * inspectionNums[1];
+            console.log(`monkeyBusiness: ${monkeyBusiness}`);
+        }
+
+        function _performOperation(worryLevel, operation) {
+            if (operation.includes('+')) {
+                let val = operation.split('+')[1].trim();
+                val = val == 'old' ? worryLevel : parseInt(val);
+
+                return worryLevel + val;
+            } else if (operation.includes('*')) {
+                let val = operation.split('*')[1].trim();
+                val = val == 'old' ? worryLevel : parseInt(val);
+
+                return worryLevel * val;
+            }
+
+            return worryLevel;
+        }
+
+    </script>
+</html>

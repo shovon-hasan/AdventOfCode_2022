@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+        <div id="disp_result" style="font-size:20;font-family: monospace;"></div>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        const CRT_h = 6;
+        const CRT_w = 40;
+        var CRT_disp = [];
+        for (let y = 0; y < CRT_h; y++) {
+            CRT_disp[y] = [];
+            for (let x = 0; x < CRT_w; x++) {
+                CRT_disp[y][x] = '.';
+            }
+        }
+
+        var CRT_y = 0;
+        var CRT_x = 0;
+
+        var X = 1;
+        var cycle = 0;
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let instruction = input_lines[i];
+                if (instruction.startsWith('noop')) {
+                    _clockCycle();
+                } else {
+                    _clockCycle();
+                    _clockCycle();
+                    X += parseInt(instruction.split(' ')[1]);
+                }
+            }
+
+            _print();
+
+        }
+
+        function _clockCycle() {
+            cycle++;
+
+            CRT_y = parseInt((cycle-1)/40);
+            CRT_x = (cycle-1) % 40;
+
+            if (CRT_x >= X-1 && CRT_x <= X+1) {
+                CRT_disp[CRT_y][CRT_x] = '#';
+            }
+
+            console.log(`cycle: ${cycle}, CRT_pos: (${CRT_y},${CRT_x}), X: ${X}`);
+        }
+
+        function _print() {
+            var html = '';
+            for (let h = 0; h < CRT_h; h++) {
+                for (let w = 0; w < CRT_w; w++) {
+                    html += CRT_disp[h][w];
+                }
+                html += '<br/>';
+            }
+
+            $('#disp_result').html(html);
+        }
+    </script>
+</html>

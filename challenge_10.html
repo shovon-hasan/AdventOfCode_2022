@@ -1,0 +1,71 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            const signalStrengthsMap = {
+                20: 0,
+                60: 0,
+                100: 0,
+                140: 0,
+                180: 0,
+                220: 0
+            };
+
+            let X = 1;
+            let cycle = 0;
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let instruction = input_lines[i];
+                if (instruction.startsWith('noop')) {
+                    cycle++;
+                    if (cycle in signalStrengthsMap) {
+                        signalStrengthsMap[cycle] = X;
+                    }
+                } else {
+                    cycle++;
+                    if (cycle in signalStrengthsMap) {
+                        signalStrengthsMap[cycle] = X;
+                    }
+                    cycle++;
+                    if (cycle in signalStrengthsMap) {
+                        signalStrengthsMap[cycle] = X;
+                    }
+                    X += parseInt(instruction.split(' ')[1]);
+                }
+
+                //console.log(`After line_${i+1} finished cycle = ${cycle}, X = ${X}`);
+            }
+
+            console.log(signalStrengthsMap);
+
+            let sumOfSignalStrengths = 0;
+            for (let cycle in signalStrengthsMap) {
+                sumOfSignalStrengths += parseInt(cycle)*signalStrengthsMap[cycle]
+            }
+
+            console.log(`Answer: ${sumOfSignalStrengths}`);
+
+        }
+    </script>
+</html>
