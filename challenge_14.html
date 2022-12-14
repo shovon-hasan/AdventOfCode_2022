@@ -104,7 +104,7 @@
 
                 let dy = p2[0]-p1[0];
                 let dx = p2[1]-p1[1];
-                let dir = [dy/Math.max(Math.abs(dy),Math.abs(dx)), dx/Math.max(Math.abs(dy),Math.abs(dx))];
+                let dir = [dy/Math.sqrt(dy*dy + dx*dx), dx/Math.sqrt(dy*dy + dx*dx)];
 
                 while (p1[0] != p2[0] || p1[1] != p2[1]) {
                     area[p1[1]][p1[0]] = '#';
