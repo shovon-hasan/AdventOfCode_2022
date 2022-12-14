@@ -1,0 +1,131 @@
+<html>
+    <head>
+        <title>Challenge 14</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+        <div id="disp-output"></div>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        const H = 1000, W = 1000;
+        let H_top = 0, H_bottom = 0, W_left = H, W_right = 0;
+        const area = Array(H).fill().map(() => Array(W).fill('.'));
+        const sandSource = [0, 500];
+
+        let endSimulation = false;
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let points = input_lines[i].split('->').map(s => s.trim().split(',').map(Number));
+                points.forEach(p => {
+                    W_left = p[0] < W_left ? p[0] : W_left;
+                    W_right = p[0] > W_right ? p[0] : W_right;
+                    H_bottom = p[1] > H_bottom ? p[1] : H_bottom;
+                });
+
+                setRock(points);
+            }
+
+            // set source
+            area[sandSource[0]][sandSource[1]] = '+';
+
+            let dropCount = 0;
+            while(!endSimulation){
+                dropSand(sandSource);
+                dropCount = endSimulation ? dropCount : dropCount+1;
+            }
+
+            printArea();
+            console.log(`Drop count: ${dropCount}`);
+        }
+
+        function dropSand(pos) {
+
+            // if sand position is out of range then it will drop infinitely
+            // start simulation for next sane drop
+            if (pos[0] > H_bottom || pos[1] < W_left || pos[1] > W_right) {
+                endSimulation = true;
+                return;
+            }
+            
+            let nextPos = [pos[0]+1,pos[1]];
+            if (area[nextPos[0]][nextPos[1]] == '.') {
+                // drop down
+                dropSand(nextPos);
+                return;
+            } else {
+                // drop diagonal left
+                nextPos = [pos[0]+1,pos[1]-1];
+                if (area[nextPos[0]][nextPos[1]] == '.') {
+                    dropSand(nextPos);
+                    return;
+                } else {
+                    // drop diagonal right
+                    nextPos = [pos[0]+1,pos[1]+1];
+                    if (area[nextPos[0]][nextPos[1]] == '.') {
+                        dropSand(nextPos);
+                        return;
+                    }
+                }
+            }
+
+            // sand cannot drop below current position
+            // if cannot drop below source then end simulation
+            if(pos[0] == sandSource[0]) {
+                endSimulation = true;
+                return;
+            }
+            // else fill the position with sand
+            area[pos[0]][pos[1]] = 'o';
+            return;
+        }
+
+        function setRock(points) {
+
+            for (let p = 0; p < points.length-1; p++) {
+                let p1 = points[p];
+                let p2 = points[p+1];
+
+                let dy = p2[0]-p1[0];
+                let dx = p2[1]-p1[1];
+                let dir = [dy/Math.max(Math.abs(dy),Math.abs(dx)), dx/Math.max(Math.abs(dy),Math.abs(dx))];
+
+                while (p1[0] != p2[0] || p1[1] != p2[1]) {
+                    area[p1[1]][p1[0]] = '#';
+                    // move to next point
+                    p1[0] += dir[0];
+                    p1[1] += dir[1];
+                }
+                area[p2[1]][p2[0]] = '#';
+            }
+        }
+
+        function printArea() {
+            let html = `<table style='table-layout:fixed';`;
+            for (let r = 0; r <= H_bottom; r++) {
+                html += `<tr>`;
+                for (let c = W_left; c <= W_right; c++) {
+                    html += `<td style='height:15px;width:15px;text-align:center;vertical-align:middle;'>${area[r][c]}</td>`;
+                }
+                html += `</tr>`;
+            }
+            $('#disp-output').empty().append(html);
+        }
+    </script>
+</html>

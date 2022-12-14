@@ -1,0 +1,112 @@
+<html>
+    <head>
+        <title>Challenge 13</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            let pairsList = [];
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i+=3) {
+                let pair = [];
+                pair.push(JSON.parse(input_lines[i]));
+                pair.push(JSON.parse(input_lines[i+1]));
+
+                pairsList.push(pair);
+            }
+
+            let rightOrderPairs = [];
+
+            for (let p = 1; p <= pairsList.length; p++) {
+                let result = {
+                    'isRightOrder': undefined,
+                    'isOrderFound': false
+                };
+                _checkRightOrder(pairsList[p-1][0], pairsList[p-1][1], result);
+                if (result.isRightOrder) {
+                    rightOrderPairs.push(p);
+                }
+            }
+
+            console.log(rightOrderPairs);
+            let sum = 0;
+            rightOrderPairs.forEach(p => sum += p);
+            console.log(`sum: ${sum}`);
+        }
+
+        function _checkRightOrder(p1, p2, result) {
+            if (typeof p1 === 'number' && typeof p2 === 'number') {
+                // compare numbers
+                if (p1 < p2) {
+                    result.isRightOrder = true;
+                    result.isOrderFound = true;
+                    return;
+                }
+                if (p1 > p2) {
+                    result.isRightOrder = false;
+                    result.isOrderFound = true;
+                    return;
+                }
+            }
+
+            // check items in list
+            if (typeof p1 === 'number' && typeof p2 === 'object') {
+                p1 = [p1];
+            }
+            if (typeof p1 === 'object' && typeof p2 === 'number') {
+                p2 = [p2];
+            }
+            if (p1.length == 0 && p2.length > 0 ) {
+                result.isRightOrder = true;
+                result.isOrderFound = true;
+                return;
+            }
+            if (p1.length > 0 && p2.length == 0 ) {
+                result.isRightOrder = false;
+                result.isOrderFound = true;
+                return;
+            }
+
+            let max_len = p1.length > p2.length ? p1.length : p2.length;
+            for (let i = 0; i < max_len; i++) {
+                if (result.isOrderFound) {
+                    return;
+                }
+                let p1_new = p1[i];
+                let p2_new = p2[i];
+
+                if (typeof p1_new === 'undefined' && typeof p2_new !== 'undefined') {
+                    result.isRightOrder = true;
+                    result.isOrderFound = true;
+                    return;
+                }
+                if (typeof p1_new !== 'undefined' && typeof p2_new === 'undefined') {
+                    result.isRightOrder = false;
+                    result.isOrderFound = true;
+                    return;
+                }
+                if (!result.isOrderFound) {
+                    _checkRightOrder(p1_new, p2_new, result);
+                }
+            }
+            
+        }
+    </script>
+</html>
