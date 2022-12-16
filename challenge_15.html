@@ -1,0 +1,88 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let sensorsList = [];
+        const ROW = 2000000;
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let s_info = input_lines[i].split(':')[0].trim().substring(10);
+                let s_x = parseInt(s_info.split(',')[0].trim().substring(2));
+                let s_y = parseInt(s_info.split(',')[1].trim().substring(2));
+
+                let b_info = input_lines[i].split(':')[1].trim().substring(21);
+                let b_x = parseInt(b_info.split(',')[0].trim().substring(2));
+                let b_y = parseInt(b_info.split(',')[1].trim().substring(2));
+
+                sensorsList.push({
+                    sensorPosition: [s_x,s_y],
+                    beaconPosition: [b_x,b_y],
+                    distance: manhattanDistance([s_x,s_y],[b_x,b_y])
+                });
+            }
+
+            let reachablePoints = [];
+            sensorsList.forEach(sensor => {
+                let points = getReachedPointsInRow(sensor, ROW);
+                reachablePoints = [...reachablePoints, ...points];
+            });
+            reachablePoints = [...new Set(reachablePoints)];
+
+            // remove beacon positions
+            let beaconPositionsOnRow = [];
+            sensorsList.forEach(sensor => {
+                let [b_x,b_y] = sensor.beaconPosition;
+                if (b_y === ROW) {
+                    beaconPositionsOnRow.push(b_x);
+                }
+            });
+            beaconPositionsOnRow = [...new Set(beaconPositionsOnRow)];
+
+            let finalPoints = reachablePoints.filter(x => !beaconPositionsOnRow.includes(x));
+            console.log(`Answer: ${finalPoints.length}`);
+        }
+
+        function getReachedPointsInRow(sensor, row){
+            let [x_s,y_s] = sensor.sensorPosition;
+            let reachableDistance = sensor.distance;
+
+            if (manhattanDistance([x_s,y_s],[x_s,row]) > reachableDistance) {
+                return [];
+            }
+
+            let dx = 0;
+            let reachablePoints = [];
+            while(manhattanDistance([x_s,y_s],[x_s+dx,row]) <= reachableDistance){
+                reachablePoints.push(x_s+dx, x_s-dx);
+                dx++;
+            }
+            return reachablePoints;
+        }
+
+        function manhattanDistance([x1,y1], [x2,y2]) {
+            return Math.abs(x1-x2) + Math.abs(y1-y2);
+        }
+
+    </script>
+</html>

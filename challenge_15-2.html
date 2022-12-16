@@ -1,0 +1,149 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let sensorsList = [];
+        const DIMENSION = 4000000;
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            let linePs = [];
+            let lineNs = [];
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let s_info = input_lines[i].split(':')[0].trim().substring(10);
+                let s_x = parseInt(s_info.split(',')[0].trim().substring(2));
+                let s_y = parseInt(s_info.split(',')[1].trim().substring(2));
+
+                let b_info = input_lines[i].split(':')[1].trim().substring(21);
+                let b_x = parseInt(b_info.split(',')[0].trim().substring(2));
+                let b_y = parseInt(b_info.split(',')[1].trim().substring(2));
+
+                let distance = manhattanDistance([s_x,s_y],[b_x,b_y]);
+
+                // left, right, top, bottom
+                let range = [[s_x-distance,s_y],[s_x+distance,s_y],[s_x, s_y+distance],[s_x,s_y-distance]];
+
+                // left, top
+                let [m1,c1] = generateLineEquation(range[0], range[2]);
+                // line above should be undetected
+                linePs.push([m1,c1+1]);
+
+                // right, top
+                let [m2,c2] = generateLineEquation(range[1], range[2]);
+                // line above should be undetected
+                lineNs.push([m2,c2+1]);
+
+                // left, bottom
+                let [m3,c3] = generateLineEquation(range[0], range[3]);
+                // line below should be undetected
+                lineNs.push([m3,c2-1]);
+
+                // right, bottom
+                let [m4,c4] = generateLineEquation(range[1], range[3]);
+                // line below should be undetected
+                linePs.push([m4,c4-1]);
+
+                sensorsList.push({
+                    sensorPosition: [s_x,s_y],
+                    distance,
+                    range
+                });
+  
+            }
+
+            let intersections = [];
+            linePs.forEach(lP => {
+                lineNs.forEach(lN => {
+                    let [x,y] = intersectionOfLines(lP, lN);
+                    // beacon can be only on integer coordinates
+                    if (isWithinSearchArea([x,y]) && x%1 === 0 && y%1 === 0) {
+                        intersections.push([x,y]);
+                    }
+                });
+            });
+
+            let lastBeaconPos;
+            for (let i = 0; i <= intersections.length; i++) {
+                let p = intersections[i];
+
+                let isUndetected = true;
+                for (let j = 0; j < sensorsList.length; j++){
+                    let sensor = sensorsList[j];
+                    if (isInsideRange(sensor, p)) {
+                        isUndetected = false;
+                        break;
+                    }
+                }
+
+                if (isUndetected && isWithinSearchArea(p)) {
+                    lastBeaconPos = [...p];
+                    break;
+                }
+            }
+
+            if (lastBeaconPos) {
+                let tuningFreq = lastBeaconPos[0]*4000000 + lastBeaconPos[1];
+                console.log(`Tuning frequency: ${tuningFreq}`);
+            }
+
+        }
+
+        function manhattanDistance([x1,y1], [x2,y2]) {
+            return Math.abs(x1-x2) + Math.abs(y1-y2);
+        }
+
+        // check if a point is inside range of sensor
+        function isInsideRange(sensor, point) {
+            if (manhattanDistance(sensor.sensorPosition, point) > sensor.distance) {
+                return false;
+            }
+            return true;
+        }
+
+        function isWithinSearchArea([x,y]) {
+            if (x >= 0 && x <= DIMENSION && y >= 0 && y <= DIMENSION) {
+                return true;
+            }
+            return false;
+        }
+
+        // input : [x, y] coordinates of points
+        // output : [m, c]
+        function generateLineEquation([x1,y1], [x2,y2]) {
+            let m = (y1-y2)/(x1-x2);
+            let c = (x1*y2 - x2*y1)/(x1-x2);
+
+            return [m, c];
+        }
+
+        // input: [m, c] of lines
+        // output: [x,y] intersection point
+        function intersectionOfLines([m1,c1], [m2,c2]) {
+            let x = (c2-c1)/(m1-m2);
+            let y = (m1*c2-m2*c1)/(m1-m2);
+
+            return [x,y];
+        }
+
+    </script>
+</html>
