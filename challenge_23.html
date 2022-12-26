@@ -1,0 +1,214 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+        <div id="outputArea" style="font-family: monospace;"></div>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let Field = Array(1000).fill().map(() => Array(1000).fill(null));
+        let FieldRange = [];
+        let Origin = [500,500];
+
+        let Directions = {
+            'N': [-1,0],
+            'NE': [-1,1],
+            'E': [0,1],
+            'SE': [1,1],
+            'S': [1,0],
+            'SW': [1,-1],
+            'W': [0,-1],
+            'NW': [-1,-1]
+        };
+
+        let ProposalTypes = [
+            [['N','NE','NW'],'N'],
+            [['S','SE','SW'],'S'],
+            [['W','NW','SW'],'W'],
+            [['E','NE','SE'],'E']
+        ];
+
+        let Elves = {};
+
+        let trackElfId = '504_503';
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                for (let j = 0; j < input_lines[0].length; j++) {
+                    if (input_lines[i][j] == '#') {
+                        let r = Origin[0]+i;
+                        let c = Origin[1]+j;
+                        Field[r][c] = '#';
+                        Elves[`${r}_${c}`] = {
+                            pos: [r,c],
+                            lastProposalIndex: null
+                        };
+                    }
+                }
+            }
+
+            //console.log(Field);
+            console.log(Elves);
+
+            printField(0);
+
+            let rc = 0;
+            let nextPlay = true;
+
+            while (rc < 10 && nextPlay) {
+                nextPlay = playRound();
+                rc++;
+                printField(rc);
+            }
+
+            let [r1,c1,r2,c2] = getBoundary();
+            let result = countEmptyTiles(r1,c1,r2,c2);
+
+            console.log(`Result: ${result}`);
+            
+
+        }
+
+        function playRound() {
+            let proposedPositions = {};
+
+            for (const id in Elves) {
+                let elf = Elves[id];
+                let pos = elf.pos;
+
+                let lpi = elf.lastProposalIndex;
+                let pi = lpi == null || lpi >= 3 ? 0 : lpi + 1;
+                elf.lastProposalIndex = pi;
+
+                
+                if (!canPropose(pos)) {
+                    continue;
+                }
+
+                let pCount = 0;
+                while (pCount < 4) {
+                    if (canMove(pos, ProposalTypes[pi])) {
+                        let moveDirKey = ProposalTypes[pi][1];
+                        let moveDir = Directions[moveDirKey];
+
+                        let pp = [pos[0]+moveDir[0], pos[1]+moveDir[1]];
+                        if (proposedPositions[JSON.stringify(pp)]) {
+                            proposedPositions[JSON.stringify(pp)].push(id);
+                        } else {
+                            proposedPositions[JSON.stringify(pp)] = [id];
+                        }
+                        break;
+                    }
+                    pi = pi >= 3 ? 0 : pi + 1;
+                    pCount++;
+                }
+            }
+
+            if (Object.keys(proposedPositions).length == 0) {
+                // not change in playing next round
+                return false;
+            }
+
+            for (const pp in proposedPositions) {
+                if (proposedPositions[pp].length > 1) {
+                    continue;
+                }
+                let elfId = proposedPositions[pp][0];
+                let cp = Elves[elfId].pos;
+                Field[cp[0]][cp[1]] = null;
+
+                let np = JSON.parse(pp);
+
+                Field[np[0]][np[1]] = '#';
+                Elves[elfId].pos = np;
+            }
+
+            // can play next round
+            return true;
+        }
+
+        function canPropose(pos) {
+            let canPropose = false;
+
+            for (const key in Directions) {
+                let dir = Directions[key];
+                if (Field[pos[0]+dir[0]][pos[1]+dir[1]] == '#') {
+                    canPropose = true;
+                }
+            }
+
+            return canPropose;
+        }
+
+        function canMove(pos, proposal) {
+            let checkDirs = proposal[0];
+
+            let canMove = true;
+            checkDirs.forEach(key => {
+                let dir = Directions[key];
+                if (Field[pos[0]+dir[0]][pos[1]+dir[1]] == '#') {
+                    canMove = false;
+                }
+            });
+
+            return canMove;
+        }
+
+        function getBoundary() {
+            let r1 = Number.POSITIVE_INFINITY, c1 = Number.POSITIVE_INFINITY, r2 = 0, c2 = 0;
+
+            for (const id in Elves) {
+                let elf = Elves[id];
+                let pos = elf.pos;
+
+                r1 = pos[0] < r1 ? pos[0] : r1;
+                c1 = pos[1] < c1 ? pos[1] : c1;
+                r2 = pos[0] > r2 ? pos[0] : r2;
+                c2 = pos[1] > c2 ? pos[1] : c2;
+            }
+
+            return [r1,c1,r2,c2];
+        }
+
+        function countEmptyTiles(r1,c1,r2,c2) {
+            let count = 0;
+            for (let r = r1; r <= r2; r++) {
+                for (let c = c1; c <= c2; c++) {
+                    if (Field[r][c] == null) count++;
+                }
+            }
+            return count;
+        }
+
+        function printField(round) {
+            let [r1,c1,r2,c2] = getBoundary();
+
+            let html = `<h3>Round ${round}:</h3>`; 
+            for (let r = 500; r <= r2+1; r++) {
+                for (let c = 500; c <= c2+1; c++) {
+                    html += Field[r][c] == null ? '.' : Field[r][c];
+                }
+                html += `<br/>`
+            }
+
+            $(`#outputArea`).append(html);
+        }
+    </script>
+</html>

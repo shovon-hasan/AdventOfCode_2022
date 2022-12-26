@@ -1,0 +1,163 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        class Valve {
+            constructor(id, flow, neighbours) {
+                this.id = id;
+                this.flow = flow;
+                this.opened = false;
+                this.neighbours = neighbours;
+                this.distance = Number.POSITIVE_INFINITY;
+                this.visited = false;
+                this.distanceMap = {};
+            }
+        }
+        let nodeMap = {};
+
+        let startValveId = 'AA';
+        let effectiveValves = [];
+
+        let possibleOrders = [];
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let valve_info = input_lines[i].split(';')[0].trim();
+                let neighbour_info = input_lines[i].split(';')[1].trim();
+
+                let valveId = valve_info.substring(6,8);
+                let flow = parseInt(valve_info.split('=')[1]);
+
+                //let neighbours = neighbour_info.split('valves')[1].split(',').map(id => id.trim());
+                neighbour_info = neighbour_info.includes('valves') ? neighbour_info.split('valves')[1] : neighbour_info.split('valve')[1];
+                let neighbours = neighbour_info.split(',').map(id => id.trim());
+
+                let valve = new Valve(valveId, flow, neighbours);
+                nodeMap[valveId] = valve;
+
+                if (flow > 0) {
+                    effectiveValves.push(valve.id);
+                }
+            }
+
+            // set neighbours objects
+            for(const id in nodeMap) {
+                let valve = nodeMap[id];
+                let neighbours = [];
+                valve.neighbours.forEach(vId => {
+                    neighbours.push(nodeMap[vId]);
+                });
+                valve.neighbours = neighbours;
+            };
+
+            console.log(nodeMap);
+            // ok
+
+            for(const vId in nodeMap) {
+                let valve = nodeMap[vId];
+                createDistanceMapForNode(valve);
+            }
+            initializeNodeMap();
+            // ok
+
+            let maxRelease = openValve(startValveId, effectiveValves, 30);
+            console.log(`Max released pressure: ${maxRelease}`);
+
+
+        }
+
+        function openValve(vId, closedValves, timeLeft){
+
+            // can not release more pressure if time ends
+            if (timeLeft <= 0) return 0;
+
+            if (effectiveValves.includes(vId)) {
+                // open valve
+                timeLeft -= 1;
+            }
+            let releasedPressure = nodeMap[vId].flow * timeLeft;
+
+            // return released pressure for this valve only
+            // if there are no more closed valves
+            if (closedValves.length == 0) return releasedPressure;
+
+            let next_releasedPressures = [];
+            // try opening each closed valves an get max pressure release from that valve
+            closedValves.forEach(next_vId => {
+                let next_timeLeft = timeLeft - nodeMap[vId].distanceMap[next_vId];
+                let next_closedValves = closedValves.filter(id => id != next_vId);
+                next_releasedPressures.push(openValve(next_vId, next_closedValves, next_timeLeft));
+            });
+
+            let next_maxReleasedPressure = 0;
+            if (next_releasedPressures.length > 0) {
+                // sort descending and get first
+                next_maxReleasedPressure = next_releasedPressures.sort((a,b) => b - a)[0];
+            }
+
+            return releasedPressure + next_maxReleasedPressure;
+        }
+
+        function createDistanceMapForNode(valve) {
+            initializeNodeMap();
+
+            valve.distance = 0;
+            let toBeVisited = [valve];
+
+            while (toBeVisited.length > 0) {
+                let next = toBeVisited.shift();
+                visitAndUpdateDistance(next, toBeVisited);
+                if (toBeVisited.length > 0) {
+                    // sort to have closest distance node at first
+                    toBeVisited.sort((a,b) => a.distance - b.distance);
+                }
+            }
+
+            for(const vId in nodeMap) {
+                valve.distanceMap[vId] = nodeMap[vId].distance;
+            }
+        }
+
+        function visitAndUpdateDistance(valve, toBeVisited) {
+
+            valve.neighbours.forEach(vn => {
+                let d = valve.distance + 1;
+                if(!vn.visited && vn.distance > d) {
+                    vn.distance = d;
+                    toBeVisited.push(vn);
+                }
+            });
+
+            valve.visited = true;
+        }
+
+        function initializeNodeMap() {
+            for(const id in nodeMap) {
+                let valve = nodeMap[id];
+                valve.distance = Number.POSITIVE_INFINITY;
+                valve.visited = false;
+            }
+        }
+
+    </script>
+</html>

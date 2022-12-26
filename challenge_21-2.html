@@ -1,0 +1,123 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let riddleMap = {};
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let [name, riddle] = input_lines[i].split(':');
+
+                if (parseInt(riddle)) {
+                    riddleMap[name] = {
+                        'number': parseInt(riddle),
+                        'operation': null
+                    };
+                } else {
+                    let [n1, operator, n2] = riddle.trim().split(' ');
+                    riddleMap[name] = {
+                        'number': null,
+                        'operation': {n1, n2, operator}
+                    };
+                }
+            }
+
+            console.log(riddleMap);
+
+            let k1 = riddleMap['root'].operation.n1;
+            let k2 = riddleMap['root'].operation.n2;
+
+            let x1 = -1000;
+            let y1 = getY(x1, k1)
+            let x2 = 1000; 
+            let y2 = getY(x2, k1)
+
+            // find the range
+            while (y1*y2 > 0) {
+                x1 *= 10;
+                x2 *= 10;
+
+                y1 = getY(x1, k1);
+                y2 = getY(x2, k1);
+            }
+
+            console.log(`range found: [x1=${x1},y1=${y1}], [x2=${x2},y2=${y2}]`);
+
+            
+            let maxRun = 10000;
+            while(Math.abs(y1-y2) > 1 && maxRun > 0) {
+                let x_new = (x1+x2)/2;
+                let y_new = getY(x_new, k1);
+
+                if (y_new == 0) {
+                    break;
+                }
+
+                if(y1*y_new > 0) {
+                    x1 = x_new;
+                    y1 = y_new;
+                } else {
+                    x2 = x_new;
+                    y2 = y_new;
+                }
+
+                maxRun--;
+            }
+
+            console.log(`New range: [x1=${x1},y1=${y1}], [x2=${x2},y2=${y2}]`);
+
+            let x = Math.round(x1)
+
+            if (getY(x, k1) == 0) {
+                console.log(`Solution found, x=${x}`);
+            }
+
+            
+        }
+
+        function getY(x, key) {
+            riddleMap['humn'].number = x;
+            // for any value of humn, dffc is constant 
+            return getNumber(key)-13439547545467
+        }
+
+        function getNumber(key) {
+            if (riddleMap[key].number != null) return riddleMap[key].number;
+
+            let operation = riddleMap[key].operation;
+            let n1 = operation.n1;
+            let n2 = operation.n2;
+            let operator = operation.operator;
+
+            let number = null;
+            if (operator == '+') number = getNumber(n1) + getNumber(n2);
+            if (operator == '-') number = getNumber(n1) - getNumber(n2);
+            if (operator == '*') number = getNumber(n1) * getNumber(n2);
+            if (operator == '/') number = getNumber(n1) / getNumber(n2);
+
+            //riddleMap[key].number = number;
+
+            return number;
+        }
+    </script>
+</html>

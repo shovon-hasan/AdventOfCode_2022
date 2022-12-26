@@ -1,0 +1,84 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let decNums = [];
+        let SNAFUtoDigit = {
+            '2': 2,
+            '1': 1,
+            '0': 0,
+            '-': -1,
+            '=': -2
+        };
+
+        let DIGITtoSNAFU = {
+            '2': '2',
+            '1': '1',
+            '0': '0',
+            '-1': '-',
+            '-2': '='
+        };
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                decNums.push(decFromSNAFU(input_lines[i]));
+            }
+
+            console.log(decNums);
+
+            let sum = 0;
+            decNums.forEach(n => sum+=n);
+            console.log(`Sum = ${sum}`);
+
+            let SNAFU_sum = SNAFUFromDec(sum);
+            console.log(`SNAFU: ${SNAFU_sum}`);
+        }
+
+        function decFromSNAFU(snafu) {
+            let dec = 0;
+            for (let i = snafu.length-1; i >= 0; i--) {
+                let p = snafu.length-1-i;
+                dec += SNAFUtoDigit[snafu[i]] * Math.pow(5, p);
+            }
+
+            return dec;
+        }
+
+        function SNAFUFromDec(dec){
+            let SNAFUdigits = [];
+            do {
+                if (dec % 5 > 2) {
+                    SNAFUdigits.push(DIGITtoSNAFU[(dec%5)-5]);
+                    dec += 5-(dec%5);
+                } else {
+                    SNAFUdigits.push(DIGITtoSNAFU[dec%5]);
+                }
+                
+                dec = parseInt(dec/5);
+            } while (dec !== 0);
+
+            SNAFUdigits.reverse();
+            return SNAFUdigits.join('');
+        }
+    </script>
+</html>

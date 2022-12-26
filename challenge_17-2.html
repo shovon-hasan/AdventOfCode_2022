@@ -1,0 +1,316 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+        <style>
+            table {
+                table-layout: fixed;
+            }
+            td {
+                height: 30px;
+                width: 30px;
+                text-align: center;
+                vertical-align: middle;
+            }
+        </style>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+        <button onclick="test_skylineScan(2585)">Skyline</button>
+        <div id="disp-output"></div>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let chamber = [];
+        let airFlow = [];
+        let flowDirIndex = null; // < or >
+        let fallingRockShape = null; // 0 ~ 4
+
+        let highestRockRow = 0;
+
+        const rockShapeMap = [
+            [
+                ['#','#','#','#']
+            ],
+            [
+                ['.', '#', '.'],
+                ['#','#','#'],
+                ['.', '#', '.']
+            ],
+            [
+                ['#','#','#'],
+                ['.','.','#'],
+                ['.','.','#']
+            ],
+            [
+                ['#'],
+                ['#'],
+                ['#'],
+                ['#']
+            ],
+            [
+                ['#','#'],
+                ['#','#']
+            ]
+        ];
+
+        const ROCK_NUMBER = 3942;
+
+        let situations = [];
+        let heightList = [];
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            airFlow = input_str.split('');
+
+            flowDirIndex = 0;
+
+            for (let i = 0; i < ROCK_NUMBER; i++) {
+                let shapeIndex = i % 5;
+                let rockPos = [highestRockRow + 3, 2]; // rock's [0][0] point's coordinate (y,x) 
+
+                _prepareChamberForNewRock(shapeIndex, rockPos);
+
+                if (i > 1) {
+                    _recordSituation(shapeIndex, flowDirIndex, i);
+                }
+
+                let isFalling = true;
+                while (isFalling) {
+                    if (airFlow[flowDirIndex] == '>' && __canMoveRight(shapeIndex, rockPos)) {
+                        rockPos = _right(rockPos);
+                    }
+                    if (airFlow[flowDirIndex] == '<' && __canMoveLeft(shapeIndex, rockPos)) {
+                        rockPos = _left(rockPos);
+                    }
+
+                    if (__canFall(shapeIndex, rockPos)) {
+                        rockPos = _fall(rockPos);
+                    } else {
+                        _haltRock(shapeIndex, rockPos);
+                        isFalling = false;
+                    }
+
+                    flowDirIndex = (flowDirIndex+1) % airFlow.length;
+                }
+            }
+
+
+            console.log(`highestRockRow: ${highestRockRow}`);
+
+            let effectiveSituation = [];
+            for (const key in situations) {
+                if (situations[key].forwardRockCount > 0) {
+                    effectiveSituation.push(situations[key]);
+                }
+            }
+
+            effectiveSituation.sort((a,b) => b.forwardRockCount - a.forwardRockCount);
+
+            console.log(`Repetitivesituations best`);
+            console.log(effectiveSituation[0]);
+
+            let repetiton_start_rockNum = effectiveSituation[0].rockNum;
+            let repetition_start_height = effectiveSituation[0].highestRockRow;
+            let forward_rockCount = effectiveSituation[0].forwardRockCount;
+            let forward_height = effectiveSituation[0].forwardHeight;
+
+            let targetRockNum = 1000000000000;
+            
+            let repeat_count = Math.floor((targetRockNum - repetiton_start_rockNum)/forward_rockCount);
+
+            let nearestRockNum = repetiton_start_rockNum + forward_rockCount*repeat_count;
+            let nearestHeight = repetition_start_height + forward_height*repeat_count;
+
+            console.log(`After ${nearestRockNum} rock height is ${nearestHeight}`);
+
+            let rock_left = targetRockNum - nearestRockNum;
+            let additionalHeight = heightList[repetiton_start_rockNum+rock_left-1] - repetition_start_height;
+
+            let finalHeight = nearestHeight + additionalHeight;
+            console.log(`Final height after ${targetRockNum} rock is: ${finalHeight}`);
+
+            // at 618 rock num height = 933
+            // at 2323 rock num height = 3551
+            // at 2323+1705 rock num, height = 3551+2618
+
+            //printChamber();
+
+
+        }
+
+        function _haltRock(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+
+            let topRow = 0;
+            occupiedCoordites.forEach(([y,x]) => {
+                chamber[y][x] = '#';
+                topRow = y > topRow ? y : topRow;
+            });
+
+            highestRockRow = topRow+1 > highestRockRow ? topRow+1 : highestRockRow;
+            heightList.push(highestRockRow);
+        }
+
+        function _prepareChamberForNewRock(shapeIndex, [rock_y,rock_x]) {
+            let rockShape = rockShapeMap[shapeIndex];
+            let rock_h = rockShape.length;
+
+            for (let i = chamber.length; i < rock_y+rock_h; i++ ) {
+                chamber.push(['.','.','.','.','.','.','.',]);
+            }
+        }
+
+        function _recordSituation(shapeIndex, flowDirIndex, rockNum) {
+            //console.log(`### type of chamberrow: ${typeof chamber[highestRockRow-1]} for row ${highestRockRow-1}`);
+            let topLayout = _scanSkyline(highestRockRow);
+            if (topLayout.includes(null)) {
+                return;
+            }
+
+            topLayout = topLayout.join('');
+            let situationKey = `${topLayout}-${shapeIndex}-${flowDirIndex}`;
+
+            if (situations[situationKey] !== undefined) {
+                situations[situationKey].forwardHeight = highestRockRow - situations[situationKey].highestRockRow;
+                situations[situationKey].forwardRockCount = rockNum - situations[situationKey].rockNum;
+                situations[situationKey].repeatedRows.push(highestRockRow);
+                situations[situationKey].topLayouts.push(topLayout);
+                situations[situationKey].rockNums.push(rockNum);
+                console.log();
+            } else {
+                situations[situationKey] = {
+                    situationKey,
+                    highestRockRow,
+                    rockNum,
+                    rockNums: [rockNum],
+                    forwardHeight: 0,
+                    forwardRockCount: 0,
+                    repeatedRows: [highestRockRow],
+                    topLayouts: [topLayout]
+                }
+            }
+            
+        }
+
+        function _scanSkyline(chamberRow) {
+            let skyline = Array(7).fill(null);
+
+            let r = chamberRow - 1;
+            while (skyline.includes(null)) {
+                for (let i = 0; i < chamber[r].length; i++) {
+                    if (chamber[r][i] === '#' && skyline[i] === null) {
+                        skyline[i] = chamberRow - r;
+                    }
+                }
+                r--;
+                if (r < 0) {
+                    break;
+                }
+            }
+
+            return skyline;
+        }
+
+        function _fall([y,x]) {
+            return [y-1, x];
+        }
+
+        function _left([y,x]) {
+            return [y, x-1];
+        }
+
+        function _right([y,x]) {
+            return [y, x+1];
+        }
+
+        function __canFall(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+            occupiedCoordites = occupiedCoordites.map(([y,x]) => _fall([y,x]));
+
+            let canFall = true;
+            occupiedCoordites.forEach(([y,x]) => {
+                if (y < 0 || chamber[y][x] == '#') {
+                    canFall = false;
+                }
+            });
+
+            return canFall;
+        }
+
+        function __canMoveLeft(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+            occupiedCoordites = occupiedCoordites.map(([y,x]) => _left([y,x]));
+
+            let canMoveLeft = true;
+            occupiedCoordites.forEach(([y,x]) => {
+                if (x < 0 || chamber[y][x] == '#') {
+                    canMoveLeft = false;
+                }
+            });
+
+            return canMoveLeft;
+        }
+
+        function __canMoveRight(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+            occupiedCoordites = occupiedCoordites.map(([y,x]) => _right([y,x]));
+
+            let canMoveRight = true;
+            occupiedCoordites.forEach(([y,x]) => {
+                if (x > 6 || chamber[y][x] == '#') {
+                    canMoveRight = false;
+                }
+            });
+
+            return canMoveRight;
+        }
+
+        function ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]) {
+            let rockShape = rockShapeMap[shapeIndex];
+            let rock_h = rockShape.length;
+            let rock_w = rockShape[0].length;
+    
+            let occupiedCoordinates = [];
+            for (let i = 0; i < rock_h; i++) {
+                for (let j = 0; j < rock_w; j++) {
+                    if (rockShape[i][j] == '#') {
+                        occupiedCoordinates.push([rock_y+i, rock_x+j]);
+                    }
+                }
+            }
+
+            return occupiedCoordinates;
+        }
+
+        function printChamber() {
+            let html = `<table style='table-layout:fixed';`;
+            for (let r = chamber.length-1; r >= 0; r--) {
+                html += `<tr><td>|</td>`;
+                for (let c = 0; c < 7; c++) {
+                    let val = chamber[r][c] === null ? '.' : chamber[r][c];
+                    html += `<td>${val}</td>`;
+                }
+                html += `<td>|</td><td style="width:200px;text-align:left;">${r}</td></tr>`;
+            }
+            html += `<tr><td>+</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>+</td><td></td></tr></table>`;
+            $('#disp-output').empty().append(html);
+        }
+
+        function test_skylineScan(row){
+            let skyline = _scanSkyline(row);
+            console.log(`skyline_${row}`);
+            console.log(skyline);
+        }
+    </script>
+</html>

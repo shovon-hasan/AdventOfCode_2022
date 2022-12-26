@@ -1,0 +1,216 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+        <style>
+            table {
+                table-layout: fixed;
+            }
+            td {
+                height: 30px;
+                width: 30px;
+                text-align: center;
+                vertical-align: middle;
+            }
+        </style>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+        <div id="disp-output"></div>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let chamber = [];
+        let airFlow = [];
+        let flowDirIndex = null; // < or >
+        let fallingRockShape = null; // 0 ~ 4
+
+        let highestRockRow = 0;
+
+        const rockShapeMap = [
+            [
+                ['#','#','#','#']
+            ],
+            [
+                [null, '#', null],
+                ['#','#','#'],
+                [null, '#', null]
+            ],
+            [
+                ['#','#','#'],
+                [null,null,'#'],
+                [null,null,'#']
+            ],
+            [
+                ['#'],
+                ['#'],
+                ['#'],
+                ['#']
+            ],
+            [
+                ['#','#'],
+                ['#','#']
+            ]
+        ];
+
+        const ROCK_NUMBER = 100000;
+        const ROCK_NUMBER_TARGET = 1000000000000;
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            airFlow = input_str.split('');
+
+            flowDirIndex = 0;
+
+            for (let i = 0; i < ROCK_NUMBER; i++) {
+                let shapeIndex = i % 5;
+                let rockPos = [highestRockRow + 3, 2]; // rock's [0][0] point's coordinate (y,x) 
+
+                _prepareChamberForNewRock(shapeIndex, rockPos);
+
+
+                let isFalling = true;
+                while (isFalling) {
+                    if (airFlow[flowDirIndex] == '>' && __canMoveRight(shapeIndex, rockPos)) {
+                        rockPos = _right(rockPos);
+                    }
+                    if (airFlow[flowDirIndex] == '<' && __canMoveLeft(shapeIndex, rockPos)) {
+                        rockPos = _left(rockPos);
+                    }
+
+                    if (__canFall(shapeIndex, rockPos)) {
+                        rockPos = _fall(rockPos);
+                    } else {
+                        _haltRock(shapeIndex, rockPos);
+                        isFalling = false;
+                    }
+
+                    flowDirIndex = (flowDirIndex+1) % airFlow.length;
+                }
+            }
+
+
+            console.log(`highestRockRow: ${highestRockRow}`);
+
+            //printChamber();
+
+
+        }
+
+        function _haltRock(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+
+            let topRow = 0;
+            occupiedCoordites.forEach(([y,x]) => {
+                chamber[y][x] = '#';
+                topRow = y > topRow ? y : topRow;
+            });
+
+            highestRockRow = topRow+1 > highestRockRow ? topRow+1 : highestRockRow;
+        }
+
+        function _prepareChamberForNewRock(shapeIndex, [rock_y,rock_x]) {
+            let rockShape = rockShapeMap[shapeIndex];
+            let rock_h = rockShape.length;
+
+            for (let i = chamber.length; i < rock_y+rock_h; i++ ) {
+                chamber.push([null,null,null,null,null,null,null,]);
+            }
+        }
+
+        function _fall([y,x]) {
+            return [y-1, x];
+        }
+
+        function _left([y,x]) {
+            return [y, x-1];
+        }
+
+        function _right([y,x]) {
+            return [y, x+1];
+        }
+
+        function __canFall(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+            occupiedCoordites = occupiedCoordites.map(([y,x]) => _fall([y,x]));
+
+            let canFall = true;
+            occupiedCoordites.forEach(([y,x]) => {
+                if (y < 0 || chamber[y][x] == '#') {
+                    canFall = false;
+                }
+            });
+
+            return canFall;
+        }
+
+        function __canMoveLeft(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+            occupiedCoordites = occupiedCoordites.map(([y,x]) => _left([y,x]));
+
+            let canMoveLeft = true;
+            occupiedCoordites.forEach(([y,x]) => {
+                if (x < 0 || chamber[y][x] == '#') {
+                    canMoveLeft = false;
+                }
+            });
+
+            return canMoveLeft;
+        }
+
+        function __canMoveRight(shapeIndex, [rock_y,rock_x]) {
+            let occupiedCoordites = ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]);
+            occupiedCoordites = occupiedCoordites.map(([y,x]) => _right([y,x]));
+
+            let canMoveRight = true;
+            occupiedCoordites.forEach(([y,x]) => {
+                if (x > 6 || chamber[y][x] == '#') {
+                    canMoveRight = false;
+                }
+            });
+
+            return canMoveRight;
+        }
+
+        function ___getOccupiedCoordinates(shapeIndex, [rock_y,rock_x]) {
+            let rockShape = rockShapeMap[shapeIndex];
+            let rock_h = rockShape.length;
+            let rock_w = rockShape[0].length;
+    
+            let occupiedCoordinates = [];
+            for (let i = 0; i < rock_h; i++) {
+                for (let j = 0; j < rock_w; j++) {
+                    if (rockShape[i][j] == '#') {
+                        occupiedCoordinates.push([rock_y+i, rock_x+j]);
+                    }
+                }
+            }
+
+            return occupiedCoordinates;
+        }
+
+        function printChamber() {
+            let html = `<table style='table-layout:fixed';`;
+            for (let r = chamber.length-1; r >= 0; r--) {
+                html += `<tr><td>|</td>`;
+                for (let c = 0; c < 7; c++) {
+                    let val = chamber[r][c] === null ? '.' : chamber[r][c];
+                    html += `<td>${val}</td>`;
+                }
+                html += `<td>|</td></tr>`;
+            }
+            html += `<tr><td>+</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>+</td></tr></table>`;
+            $('#disp-output').empty().append(html);
+        }
+    </script>
+</html>

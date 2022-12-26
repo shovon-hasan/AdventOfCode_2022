@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let Numbers = [];
+        let Mixing = [];
+        let DecryptionKey = 811589153;
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let num = parseInt(input_lines[i]);
+                Numbers.push(num);
+                Mixing.push({id:i, num: num*DecryptionKey});
+            }
+
+            let t = 0;
+            while (t < 10) {
+                for (let i = 0; i < Numbers.length; i++) {
+                    mix(i);
+                }
+                t++;
+            }
+
+            let idx0 = Mixing.findIndex(n => n.num === 0);
+
+            let sum = 0;
+            [1000,2000,3000].forEach(idx => {
+                idx = (idx0+idx) % Numbers.length;
+                sum += Mixing[idx].num;
+            });
+
+            console.log(`Result: ${sum}`);
+        }
+
+        function mix(i) {
+            let currIdx = Mixing.findIndex(n => n.id === i);
+            let newIdx = currIdx;
+
+            let num = Mixing[currIdx].num;
+
+            let d = num%(Numbers.length-1);
+            if (d > 0) {
+                while (d > 0) {
+                    if (newIdx == Numbers.length-1) newIdx = 0;
+                    newIdx++;
+                    d--;
+                }
+            }
+            if (d < 0) {
+                while (d < 0) {
+                    if (newIdx == 0) newIdx = Numbers.length-1;
+                    newIdx--;
+                    d++;
+                }
+            }
+
+            // remove num from current index
+            Mixing.splice(currIdx,1);
+            // add num to new index
+            Mixing.splice(newIdx,0,{id:i, num});
+        }
+    </script>
+</html>

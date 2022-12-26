@@ -1,0 +1,125 @@
+<html>
+    <head>
+        <title>Challenge 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    </head>
+    <body style="width:80%;margin:50px auto;">
+        Input:<br/>
+        <textarea id="input" style="width:100%;" rows="10"></textarea>
+        <br/><br/>
+        <button onclick="solveChallenge()">Solve</button>
+    </body>
+
+    <script>
+
+        // -------------------------------------------------------------
+        // the following function includes logic to solve the problem
+        // -------------------------------------------------------------
+
+        let cubes = [];
+
+        let field;
+
+        let cubeSides = [
+            []
+        ];
+
+        let max_x = 0, max_y = 0, max_z = 0;
+        let flowSteamCount = 0;
+
+        function solveChallenge() {
+
+            // Read input from textarea
+            var input_str = $('#input').val();
+            var input_lines = input_str.split(/\r\n|\r|\n/);
+
+            // loop through each input lines
+            for (let i = 0; i < input_lines.length; i++) {
+                let position = input_lines[i].split(',').map(Number);
+                cubes.push(position);
+
+                max_x = position[0] > max_x ? position[0] : max_x;
+                max_y = position[1] > max_y ? position[1] : max_y;
+                max_z = position[2] > max_z ? position[2] : max_z;
+            }
+
+            field = Array(max_x+2).fill().map(() => Array(max_y+2).fill().map(() => Array(max_z+2).fill('A')));
+
+            cubes.forEach(([x,y,z]) => field[x][y][z] = 'L');
+
+            // fill field with steam
+            // [max_x+1, max_y+1, max_z+1] if the first point to fill
+            let fillPoints = new Set();
+            fillPoints.add(`${max_x+1}-${max_y+1}-${max_z+1}`);
+
+            while (fillPoints.size > 0) {
+                let [fillPoint] = fillPoints;
+                fillPoints.delete(fillPoint);
+
+                let [x,y,z] = fillPoint.split('-').map(Number);
+                field[x][y][z] = 'S';
+
+                // flow right
+                if (x <= max_x && field[x+1][y][z] == 'A') fillPoints.add(`${x+1}-${y}-${z}`);
+                // flow left
+                if (x > 0 && field[x-1][y][z] == 'A') fillPoints.add(`${x-1}-${y}-${z}`);
+                // flow frontward
+                if (y > 0 && field[x][y-1][z] == 'A') fillPoints.add(`${x}-${y-1}-${z}`);
+                // flow backward
+                if (y <= max_y && field[x][y+1][z] == 'A') fillPoints.add(`${x}-${y+1}-${z}`);
+                // flow up
+                if (z <= max_z && field[x][y][z+1] == 'A') fillPoints.add(`${x}-${y}-${z+1}`);
+                // flow down
+                if (z > 0 && field[x][y][z-1] == 'A') fillPoints.add(`${x}-${y}-${z-1}`);
+            }
+
+            //console.log(`Field filled with steam:`);
+            //console.log(field);
+
+            let surfaceArea = 0;
+            cubes.forEach(([x,y,z]) => {
+                let openedSurface = 0;
+
+                // right side open
+                if (field[x+1][y][z] == 'S') openedSurface += 1;
+                // left side open
+                if (x == 0 || field[x-1][y][z] == 'S') openedSurface += 1;
+                // front side open
+                if (y == 0 || field[x][y-1][z] == 'S') openedSurface += 1;
+                // back side open
+                if (field[x][y+1][z] == 'S') openedSurface += 1;
+                // top side open
+                if (field[x][y][z+1] == 'S') openedSurface += 1;
+                // bottom side open
+                if (z == 0 || field[x][y][z-1] == 'S') openedSurface += 1;
+
+                surfaceArea += openedSurface;
+            });
+
+            console.log(`Surface Area: ${surfaceArea}`);
+        }
+
+        function flowSteam(nextFillPoints){
+            while (nextFillPoints.size > 0) {
+                let [fillPoint] = nextFillPoints;
+                nextFillPoints.delete(fillPoint);
+
+                let [x,y,z] = fillPoint.split('-').map(Number);
+                field[x][y][z] = 'S';
+
+                // flow right
+                if (x <= max_x && field[x+1][y][z] == 'A') nextFillPoints.add(`${x+1}-${y}-${z}`);
+                // flow left
+                if (x > 0 && field[x-1][y][z] == 'A') nextFillPoints.add(`${x-1}-${y}-${z}`);
+                // flow frontward
+                if (y > 0 && field[x][y-1][z] == 'A') nextFillPoints.add(`${x}-${y-1}-${z}`);
+                // flow backward
+                if (y <= max_y && field[x][y+1][z] == 'A') nextFillPoints.add(`${x}-${y+1}-${z}`);
+                // flow up
+                if (z <= max_z && field[x][y][z+1] == 'A') nextFillPoints.add(`${x}-${y}-${z+1}`);
+                // flow down
+                if (z > 0 && field[x][y][z-1] == 'A') nextFillPoints.add(`${x}-${y}-${z-1}`);
+            }
+        }
+    </script>
+</html>
